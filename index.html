@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tap Tap Swap Game</title>
+  <title>Tap Swap Game</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
       font-family: 'Arial', sans-serif;
       display: flex;
       justify-content: center;
@@ -20,20 +20,31 @@
     .game-container {
       text-align: center;
       position: relative;
-      width: 400px;
-      height: 600px;
+      width: 90%;
+      max-width: 450px;
+      height: 650px;
       background: #ffffff;
-      border-radius: 15px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
       padding: 20px;
-      display: none;
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
 
     .score {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: bold;
-      margin-bottom: 20px;
       color: #333;
+      margin-bottom: 20px;
     }
 
     .coin {
@@ -44,11 +55,11 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 30px auto;
+      margin: 20px auto;
       position: relative;
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
       cursor: pointer;
-      transition: transform 0.2s ease-in-out;
+      transition: transform 0.3s ease;
     }
 
     .coin:hover {
@@ -56,10 +67,46 @@
     }
 
     .coin h1 {
-      font-size: 40px;
+      font-size: 60px;
+      color: white;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .shop {
+      margin-top: 20px;
+    }
+
+    .shop-item {
+      padding: 15px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .shop-item:hover {
+      transform: scale(1.05);
+      background: #f0f0f0;
+    }
+
+    .wallet-info {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      left: 0;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      text-align: center;
+      font-size: 16px;
+      color: #444;
+    }
+
+    .wallet-info span {
+      color: #007bff;
       font-weight: bold;
-      color: #fff;
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
     }
 
     .connect-wallet {
@@ -68,44 +115,35 @@
     }
 
     .wallet-btn {
-      padding: 10px 20px;
+      padding: 15px 30px;
       font-size: 18px;
       color: #fff;
-      background: #007bff;
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
       border: none;
-      border-radius: 5px;
+      border-radius: 30px;
       cursor: pointer;
       transition: background 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
     .wallet-btn:hover {
-      background: #0056b3;
+      background: linear-gradient(90deg, #ee0979, #ff6a00);
     }
-
-    #wallet {
-      margin-top: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #333;
-    }
-
   </style>
 </head>
 <body>
   <div id="connect-wallet" class="connect-wallet">
-    <h1>Welcome to Tap Tap Swap!</h1>
+    <h1>Welcome to Tap Swap!</h1>
     <p>Please connect your wallet to start playing.</p>
     <button class="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
     <div id="wallet"></div>
   </div>
 
   <div id="game-container" class="game-container">
+    <div class="header">🚀 Tap Swap 🚀</div>
     <div class="score">Points: <span id="points">0</span></div>
     <div class="coin" onclick="collectPoints(event)">
       <h1>💰</h1>
-    </div>
-    <div class="wallet-info">
-      <p>Your Wallet: <span id="user-wallet"></span></p>
     </div>
     <div class="shop">
       <h2>Shop</h2>
@@ -113,6 +151,9 @@
         <p><strong>Increase Click Power</strong></p>
         <p>Cost: <span id="clickPowerCost">50</span> Points</p>
       </div>
+    </div>
+    <div class="wallet-info">
+      Wallet: <span id="user-wallet"></span>
     </div>
   </div>
 
@@ -122,62 +163,12 @@
     let clickPowerCost = 50;
     let walletAddress = "";
 
-    // Load user data from localStorage
-    function loadUserData() {
-      const savedData = JSON.parse(localStorage.getItem("tapTapGameData"));
-      if (savedData) {
-        points = savedData.points || 0;
-        clickPower = savedData.clickPower || 1;
-        clickPowerCost = savedData.clickPowerCost || 50;
-        walletAddress = savedData.walletAddress || "";
-      }
-    }
-
-    // Save user data to localStorage
-    function saveUserData() {
-      const data = {
-        points,
-        clickPower,
-        clickPowerCost,
-        walletAddress,
-      };
-      localStorage.setItem("tapTapGameData", JSON.stringify(data));
-    }
-
-    // Update UI
-    function updateUI() {
-      document.getElementById("points").textContent = points;
-      document.getElementById("clickPowerCost").textContent = clickPowerCost;
-      document.getElementById("user-wallet").textContent = walletAddress;
-    }
-
-    // Collect Points
-    function collectPoints(event) {
-      points += clickPower;
-      saveUserData();
-      updateUI();
-    }
-
-    // Buy Items
-    function buyItem(item) {
-      if (item === "clickPower" && points >= clickPowerCost) {
-        points -= clickPowerCost;
-        clickPower++;
-        clickPowerCost *= 2; // Increase cost for next upgrade
-        saveUserData();
-      } else {
-        alert("Not enough points!");
-      }
-      updateUI();
-    }
-
-    // Wallet Connection Logic
     async function connectWallet() {
       if (typeof window.ethereum !== "undefined" && window.ethereum.isMetaMask) {
         try {
           const accounts = await ethereum.request({ method: "eth_requestAccounts" });
           walletAddress = accounts[0];
-          saveUserData();
+          localStorage.setItem("walletAddress", walletAddress);
           document.getElementById("connect-wallet").style.display = "none";
           document.getElementById("game-container").style.display = "block";
           updateUI();
@@ -190,13 +181,36 @@
       }
     }
 
-    // Initialize Game
-    loadUserData();
-    if (walletAddress) {
-      document.getElementById("connect-wallet").style.display = "none";
-      document.getElementById("game-container").style.display = "block";
+    function collectPoints(event) {
+      points += clickPower;
+      updateUI();
     }
-    updateUI();
+
+    function buyItem(item) {
+      if (item === "clickPower" && points >= clickPowerCost) {
+        points -= clickPowerCost;
+        clickPower++;
+        clickPowerCost *= 2;
+        updateUI();
+      } else {
+        alert("Not enough points!");
+      }
+    }
+
+    function updateUI() {
+      document.getElementById("points").textContent = points;
+      document.getElementById("clickPowerCost").textContent = clickPowerCost;
+      document.getElementById("user-wallet").textContent = walletAddress;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      walletAddress = localStorage.getItem("walletAddress") || "";
+      if (walletAddress) {
+        document.getElementById("connect-wallet").style.display = "none";
+        document.getElementById("game-container").style.display = "block";
+        updateUI();
+      }
+    });
   </script>
 </body>
 </html>
