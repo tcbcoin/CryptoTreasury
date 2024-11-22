@@ -1,233 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tap Swap Game</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #4e54c8, #8f94fb);
-      font-family: 'Arial', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .game-container {
-      text-align: center;
-      position: relative;
-      width: 90%;
-      max-width: 450px;
-      height: 650px;
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-      padding: 20px;
-      overflow: hidden;
-    }
-
-    .header {
-      background: linear-gradient(90deg, #ff6a00, #ee0979);
-      color: white;
-      padding: 15px;
-      border-radius: 10px;
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-
-    .score {
-      font-size: 26px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 20px;
-      position: relative;
-    }
-
-    .coin {
-      width: 150px;
-      height: 150px;
-      background: radial-gradient(circle, #FFD700, #FFA500);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 20px auto;
-      position: relative;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    .coin:hover {
-      transform: scale(1.1);
-    }
-
-    .coin h1 {
-      font-size: 60px;
-      color: white;
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Shake animation */
-    .coin.shake {
-      animation: shake 0.3s ease;
-    }
-
-    @keyframes shake {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      50% { transform: translateX(10px); }
-      75% { transform: translateX(-10px); }
-      100% { transform: translateX(0); }
-    }
-
-    .floating-points {
-      position: absolute;
-      font-size: 20px;
-      font-weight: bold;
-      color: green;
-      pointer-events: none;
-      animation: moveToScore 1.2s ease-out;
-    }
-
-    @keyframes moveToScore {
-      0% {
-        transform: translate(0, 0);
-        opacity: 1;
-      }
-      100% {
-        transform: translate(100px, -100px);
-        opacity: 0;
-      }
-    }
-
-    .shop {
-      margin-top: 20px;
-    }
-
-    .shop-item {
-      padding: 15px;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s ease;
-    }
-
-    .shop-item:hover {
-      transform: scale(1.05);
-      background: #f0f0f0;
-    }
-
-    .wallet-info {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2E Blockchain Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+        }
+        #connectWallet {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-  <div class="game-container">
-    <div class="header">🚀 Tap Swap 🚀</div>
-    <div class="score">Points: <span id="points">0</span></div>
-    <div class="coin" onclick="collectPoints(event)">
-      <h1>💰</h1>
-    </div>
-    <div class="shop">
-      <h2>Shop</h2>
-      <div class="shop-item" onclick="buyItem('clickPower')">
-        <p><strong>Increase Click Power</strong></p>
-        <p>Cost: <span id="clickPowerCost">50</span> Points</p>
-      </div>
-    </div>
 
-    <div class="wallet-info" id="walletAddress">Wallet Address: Not connected</div>
-  </div>
+<button id="connectWallet">Connect Wallet</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
-  <script>
-    let points = 0;
-    let clickPower = 1;
-    let clickPowerCost = 50;
-
-    // Check if MetaMask is installed
-    if (typeof window.ethereum !== 'undefined') {
-      const web3 = new Web3(window.ethereum);
-
-      async function connectWallet() {
-        try {
-          const accounts = await web3.eth.requestAccounts();
-          const account = accounts[0];
-          localStorage.setItem('walletAddress', account); // Save wallet address
-          document.getElementById('walletAddress').textContent = `Wallet Address: ${account}`;
-        } catch (err) {
-          console.error("Error connecting to MetaMask", err);
+<script>
+    // Game configuration
+    const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: '#87CEEB',
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 0 },
+                debug: false
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
         }
-      }
+    };
 
-      // Connect wallet on page load if previously stored
-      window.addEventListener('load', () => {
-        const savedAddress = localStorage.getItem('walletAddress');
-        if (savedAddress) {
-          document.getElementById('walletAddress').textContent = `Wallet Address: ${savedAddress}`;
+    const game = new Phaser.Game(config);
+
+    let player, cursors, resources, scoreText;
+    let score = 0;
+    let walletConnected = false;
+
+    // Blockchain variables
+    let userWalletAddress = null;
+    let provider, signer;
+
+    function preload() {
+        // Load assets
+        this.load.image('grass', 'https://examples.phaser.io/assets/skies/sky4.png');
+        this.load.image('player', 'https://examples.phaser.io/assets/sprites/phaser-dude.png');
+        this.load.image('resource', 'https://examples.phaser.io/assets/sprites/gem.png');
+    }
+
+    function create() {
+        // Add the background
+        this.add.tileSprite(0, 0, config.width, config.height, 'grass').setOrigin(0, 0);
+
+        // Add the player
+        player = this.physics.add.sprite(400, 300, 'player').setScale(0.5);
+        player.setCollideWorldBounds(true);
+
+        // Add resources group
+        resources = this.physics.add.group({
+            key: 'resource',
+            repeat: 10,
+            setXY: { x: 50, y: 50, stepX: 70, stepY: 50 }
+        });
+
+        resources.children.iterate(function (child) {
+            child.setScale(0.5);
+        });
+
+        // Add collision between player and resources
+        this.physics.add.overlap(player, resources, collectResource, null, this);
+
+        // Add keyboard controls
+        cursors = this.input.keyboard.createCursorKeys();
+
+        // Display score
+        scoreText = this.add.text(10, 10, `Score: ${score}`, {
+            font: '16px Arial',
+            fill: '#ffffff'
+        });
+
+        // Connect wallet button
+        const connectButton = document.getElementById('connectWallet');
+        connectButton.addEventListener('click', connectWallet);
+    }
+
+    function update() {
+        player.setVelocity(0);
+
+        if (cursors.left.isDown) {
+            player.setVelocityX(-200);
+        } else if (cursors.right.isDown) {
+            player.setVelocityX(200);
+        }
+
+        if (cursors.up.isDown) {
+            player.setVelocityY(-200);
+        } else if (cursors.down.isDown) {
+            player.setVelocityY(200);
+        }
+    }
+
+    function collectResource(player, resource) {
+        resource.disableBody(true, true);
+        score += 10;
+        scoreText.setText(`Score: ${score}`);
+
+        if (walletConnected) {
+            // Simulate sending reward to wallet
+            console.log(`Reward sent to wallet: ${userWalletAddress}`);
+        }
+    }
+
+    async function connectWallet() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                // Request account access
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                userWalletAddress = accounts[0];
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                walletConnected = true;
+                alert(`Wallet connected: ${userWalletAddress}`);
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+            }
         } else {
-          connectWallet();
+            alert('MetaMask is not installed!');
         }
-      });
-
-    } else {
-      alert('Please install MetaMask!');
     }
+</script>
 
-    // Collect points with animation
-    function collectPoints(event) {
-      points += clickPower;
-
-      // Shake animation
-      const coin = event.currentTarget;
-      coin.classList.add('shake');
-      setTimeout(() => coin.classList.remove('shake'), 300);
-
-      // Show floating points animation
-      const floatingPoints = document.createElement('div');
-      floatingPoints.className = 'floating-points';
-      floatingPoints.textContent = `+${clickPower}`;
-      floatingPoints.style.left = `${event.clientX - 20}px`;
-      floatingPoints.style.top = `${event.clientY - 30}px`;
-      document.body.appendChild(floatingPoints);
-
-      floatingPoints.addEventListener('animationend', () => floatingPoints.remove());
-
-      // Update UI
-      updateUI();
-    }
-
-    // Buy items
-    function buyItem(item) {
-      if (item === 'clickPower' && points >= clickPowerCost) {
-        points -= clickPowerCost;
-        clickPower++;
-        clickPowerCost *= 2; // Increase cost for next upgrade
-      } else {
-        alert('Not enough points!');
-      }
-      updateUI();
-    }
-
-    // Update UI
-    function updateUI() {
-      document.getElementById('points').textContent = points;
-      document.getElementById('clickPowerCost').textContent = clickPowerCost;
-    }
-
-    // Initialize UI
-    updateUI();
-  </script>
 </body>
 </html>
