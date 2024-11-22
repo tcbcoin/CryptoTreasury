@@ -1,184 +1,168 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Coin Clicker Game</title>
+  <title>Tap Tap Swap Game</title>
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      text-align: center;     
-      background: #f3f4f6;
       margin: 0;
       padding: 0;
-      transition: background 0.5s ease-in-out;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
-    .container {
-      margin-top: 50px;
-      animation: fadeIn 1s ease-in-out;
+
+    .game-container {
+      text-align: center;
+      position: relative;
+      width: 400px;
+      height: 600px;
+      background: #ffffff;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      display: none;
     }
+
+    .score {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
     .coin {
       width: 150px;
       height: 150px;
-      margin: 20px auto;
-      background-image: url('https://imgur.com/a/yU4twkP'); /* تغییر به تصویر جدید */
-      background-size: cover;
-      background-position: center;
+      background: radial-gradient(circle, #FFD700, #FFA500);
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      margin: 30px auto;
+      position: relative;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
       cursor: pointer;
-      transition: transform 0.2s ease-in-out, box-shadow 0.3s ease-in-out;
+      transition: transform 0.2s ease-in-out;
     }
+
     .coin:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
     }
-    .coin:active {
-      transform: scale(0.9);
-    }
+
     .coin h1 {
-      color: white;
-      font-size: 30px;
+      font-size: 40px;
       font-weight: bold;
-      animation: popIn 0.3s ease-out;
+      color: #fff;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
     }
-    .stats, .shop {
-      margin-top: 30px;
-      font-size: 20px;
-      color: #333;
-      animation: slideIn 0.5s ease-out;
+
+    .connect-wallet {
+      text-align: center;
+      margin-top: 20px;
     }
-    .shop-item {
-      margin: 15px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: #fff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+    .wallet-btn {
+      padding: 10px 20px;
+      font-size: 18px;
+      color: #fff;
+      background: #007bff;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-      transition: transform 0.3s ease-in-out, background 0.3s ease-in-out;
-    }
-    .shop-item:hover {
-      transform: scale(1.05);
-      background: #f0f0f0;
-    }
-    .shop-item:active {
-      transform: scale(0.98);
-    }
-    .shop-item p {
-      margin: 5px 0;
+      transition: background 0.3s ease;
     }
 
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
+    .wallet-btn:hover {
+      background: #0056b3;
     }
 
-    @keyframes slideIn {
-      0% { transform: translateY(-30px); opacity: 0; }
-      100% { transform: translateY(0); opacity: 1; }
+    #wallet {
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
     }
 
-    @keyframes popIn {
-      0% { transform: scale(0.8); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="coin" onclick="collectPoints()">
-      <h1>Click</h1>
-    </div>
-    <div class="stats">
-      <p>Points: <span id="points">0</span></p>
-      <p>Tokens: <span id="tokens">0</span></p>
-      <p>Click Power: <span id="click-power">1</span></p>
-    </div>
+  <div id="connect-wallet" class="connect-wallet">
+    <h1>Welcome to Tap Tap Swap!</h1>
+    <p>Please connect your wallet to start playing.</p>
+    <button class="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+    <div id="wallet"></div>
+  </div>
 
+  <div id="game-container" class="game-container">
+    <div class="score">Points: <span id="points">0</span></div>
+    <div class="coin" onclick="collectPoints(event)">
+      <h1>💰</h1>
+    </div>
     <div class="shop">
       <h2>Shop</h2>
-      <div class="shop-item" onclick="buyItem('power-up')">
-        <p><strong>Power Up</strong></p>
-        <p>Increases click power by 1.</p>
-        <p>Cost: <span id="power-up-cost">100</span> Points</p>
+      <div class="shop-item" onclick="buyItem('clickPower')">
+        <p><strong>Increase Click Power</strong></p>
+        <p>Cost: <span id="clickPowerCost">50</span> Points</p>
       </div>
     </div>
   </div>
 
   <script>
-    // Game variables
-    let points = localStorage.getItem('points') ? parseInt(localStorage.getItem('points')) : 0;
-    let tokens = localStorage.getItem('tokens') ? parseInt(localStorage.getItem('tokens')) : 0;
-    let clickPower = localStorage.getItem('clickPower') ? parseInt(localStorage.getItem('clickPower')) : 1;
-    let powerUpCount = localStorage.getItem('powerUpCount') ? parseInt(localStorage.getItem('powerUpCount')) : 0;
-
-    // Update UI
-    document.getElementById('points').innerText = points;
-    document.getElementById('tokens').innerText = tokens;
-    document.getElementById('click-power').innerText = clickPower;
-    updatePowerUpCost();
-
-    // Collect points
-    function collectPoints() {
-      points += clickPower;
-      checkTokens();
-      updateUI();
-      saveGame();
-    }
-
-    // Buy items from the shop
-    function buyItem(item) {
-      if (item === 'power-up') {
-        let powerUpCost = getPowerUpCost();
-        if (points >= powerUpCost) {
-          points -= powerUpCost;
-          clickPower++;
-          powerUpCount++;
-          updatePowerUpCost();
-        } else {
-          alert('Not enough points!');
-        }
-      }
-      updateUI();
-      saveGame();
-    }
-
-    // Check if tokens can be earned
-    function checkTokens() {
-      if (points >= 100000000) {
-        tokens++;
-        points -= 100000000;
-      }
-    }
+    // Variables
+    let points = 0;
+    let clickPower = 1;
+    let clickPowerCost = 50;
 
     // Update UI
     function updateUI() {
-      document.getElementById('points').innerText = points;
-      document.getElementById('tokens').innerText = tokens;
-      document.getElementById('click-power').innerText = clickPower;
+      document.getElementById('points').textContent = points;
+      document.getElementById('clickPowerCost').textContent = clickPowerCost;
     }
 
-    // Update power-up cost
-    function updatePowerUpCost() {
-      let cost = getPowerUpCost();
-      document.getElementById('power-up-cost').innerText = cost;
+    // Collect Points
+    function collectPoints(event) {
+      points += clickPower;
+      updateUI();
     }
 
-    // Get the current cost of the power-up
-    function getPowerUpCost() {
-      return 100 * Math.pow(2, powerUpCount);
+    // Buy Items
+    function buyItem(item) {
+      if (item === 'clickPower' && points >= clickPowerCost) {
+        points -= clickPowerCost;
+        clickPower++;
+        clickPowerCost *= 2; // Increase cost for next upgrade
+      } else {
+        alert('Not enough points!');
+      }
+      updateUI();
     }
 
-    // Save game data
-    function saveGame() {
-      localStorage.setItem('points', points);
-      localStorage.setItem('tokens', tokens);
-      localStorage.setItem('clickPower', clickPower);
-      localStorage.setItem('powerUpCount', powerUpCount);
+    // Wallet Connection Logic
+    async function connectWallet() {
+      if (typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask) {
+        try {
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          const walletAddress = accounts[0];
+          document.getElementById('wallet').textContent = `Wallet Address: ${walletAddress}`;
+          document.getElementById('connect-wallet').style.display = 'none';
+          document.getElementById('game-container').style.display = 'block';
+        } catch (error) {
+          console.error('Connection rejected:', error);
+          alert('You must connect your wallet to play.');
+        }
+      } else {
+        alert('MetaMask is not detected. Please install or enable it in your browser.');
+      }
     }
+
+    // Initialize UI
+    updateUI();
   </script>
 </body>
 </html>
