@@ -1,50 +1,233 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const { verifySignature } = require("@ton-community/ton-crypto");
-
-// اتصال به پایگاه داده MongoDB
-mongoose.connect("mongodb://localhost:27017/tonGameDB", { useNewUrlParser: true, useUnifiedTopology: true });
-
-const app = express();
-app.use(bodyParser.json());
-
-// مدل MongoDB برای ذخیره اطلاعات کیف پول
-const WalletSchema = new mongoose.Schema({
-  walletAddress: { type: String, required: true, unique: true },
-  timestamp: { type: Date, default: Date.now },
-});
-
-const Wallet = mongoose.model("Wallet", WalletSchema);
-
-// مسیر API برای ذخیره آدرس کیف پول
-app.post("/api/save-wallet", async (req, res) => {
-  const { walletAddress, signedMessage, message } = req.body;
-
-  try {
-    // تأیید امضای دیجیتال
-    const isValid = verifySignature({
-      publicKey: walletAddress,
-      data: Buffer.from(message, "utf-8"),
-      signature: Buffer.from(signedMessage, "base64"),
-    });
-
-    if (!isValid) {
-      return res.status(400).json({ error: "Invalid signature!" });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tap Swap Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    // ذخیره آدرس کیف پول در پایگاه داده
-    const wallet = new Wallet({ walletAddress });
-    await wallet.save();
+    .game-container {
+      text-align: center;
+      position: relative;
+      width: 90%;
+      max-width: 450px;
+      height: 650px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      overflow: hidden;
+    }
 
-    res.status(200).json({ message: "Wallet saved successfully!" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error!" });
-  }
-});
+    .header {
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
 
-// راه‌اندازی سرور
-app.listen(3000, () => {
-  console.log("Server is running on http://localhost:3000");
-});
+    .score {
+      font-size: 26px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .coin {
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, #FFD700, #FFA500);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px auto;
+      position: relative;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .coin:hover {
+      transform: scale(1.1);
+    }
+
+    .coin h1 {
+      font-size: 60px;
+      color: white;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Shake animation */
+    .coin.shake {
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      50% { transform: translateX(10px); }
+      75% { transform: translateX(-10px); }
+      100% { transform: translateX(0); }
+    }
+
+    .floating-points {
+      position: absolute;
+      font-size: 20px;
+      font-weight: bold;
+      color: green;
+      pointer-events: none;
+      animation: moveToScore 1.2s ease-out;
+    }
+
+    @keyframes moveToScore {
+      0% {
+        transform: translate(0, 0);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(100px, -100px);
+        opacity: 0;
+      }
+    }
+
+    .shop {
+      margin-top: 20px;
+    }
+
+    .shop-item {
+      padding: 15px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .shop-item:hover {
+      transform: scale(1.05);
+      background: #f0f0f0;
+    }
+
+    .wallet-info {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="header">🚀 Tap Swap 🚀</div>
+    <div class="score">Points: <span id="points">0</span></div>
+    <div class="coin" onclick="collectPoints(event)">
+      <h1>💰</h1>
+    </div>
+    <div class="shop">
+      <h2>Shop</h2>
+      <div class="shop-item" onclick="buyItem('clickPower')">
+        <p><strong>Increase Click Power</strong></p>
+        <p>Cost: <span id="clickPowerCost">50</span> Points</p>
+      </div>
+    </div>
+
+    <div class="wallet-info" id="walletAddress">Wallet Address: Not connected</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+  <script>
+    let points = 0;
+    let clickPower = 1;
+    let clickPowerCost = 50;
+
+    // Check if MetaMask is installed
+    if (typeof window.ethereum !== 'undefined') {
+      const web3 = new Web3(window.ethereum);
+
+      async function connectWallet() {
+        try {
+          const accounts = await web3.eth.requestAccounts();
+          const account = accounts[0];
+          localStorage.setItem('walletAddress', account); // Save wallet address
+          document.getElementById('walletAddress').textContent = `Wallet Address: ${account}`;
+        } catch (err) {
+          console.error("Error connecting to MetaMask", err);
+        }
+      }
+
+      // Connect wallet on page load if previously stored
+      window.addEventListener('load', () => {
+        const savedAddress = localStorage.getItem('walletAddress');
+        if (savedAddress) {
+          document.getElementById('walletAddress').textContent = `Wallet Address: ${savedAddress}`;
+        } else {
+          connectWallet();
+        }
+      });
+
+    } else {
+      alert('Please install MetaMask!');
+    }
+
+    // Collect points with animation
+    function collectPoints(event) {
+      points += clickPower;
+
+      // Shake animation
+      const coin = event.currentTarget;
+      coin.classList.add('shake');
+      setTimeout(() => coin.classList.remove('shake'), 300);
+
+      // Show floating points animation
+      const floatingPoints = document.createElement('div');
+      floatingPoints.className = 'floating-points';
+      floatingPoints.textContent = `+${clickPower}`;
+      floatingPoints.style.left = `${event.clientX - 20}px`;
+      floatingPoints.style.top = `${event.clientY - 30}px`;
+      document.body.appendChild(floatingPoints);
+
+      floatingPoints.addEventListener('animationend', () => floatingPoints.remove());
+
+      // Update UI
+      updateUI();
+    }
+
+    // Buy items
+    function buyItem(item) {
+      if (item === 'clickPower' && points >= clickPowerCost) {
+        points -= clickPowerCost;
+        clickPower++;
+        clickPowerCost *= 2; // Increase cost for next upgrade
+      } else {
+        alert('Not enough points!');
+      }
+      updateUI();
+    }
+
+    // Update UI
+    function updateUI() {
+      document.getElementById('points').textContent = points;
+      document.getElementById('clickPowerCost').textContent = clickPowerCost;
+    }
+
+    // Initialize UI
+    updateUI();
+  </script>
+</body>
+</html>
