@@ -1,111 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tap Swap - TON Wallet Integration</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #4e54c8, #8f94fb);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+const express = require("express");
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+const { verifySignature } = require("@ton-community/ton-crypto");
+
+// اتصال به پایگاه داده MongoDB
+mongoose.connect("mongodb://localhost:27017/tonGameDB", { useNewUrlParser: true, useUnifiedTopology: true });
+
+const app = express();
+app.use(bodyParser.json());
+
+// مدل MongoDB برای ذخیره اطلاعات کیف پول
+const WalletSchema = new mongoose.Schema({
+  walletAddress: { type: String, required: true, unique: true },
+  timestamp: { type: Date, default: Date.now },
+});
+
+const Wallet = mongoose.model("Wallet", WalletSchema);
+
+// مسیر API برای ذخیره آدرس کیف پول
+app.post("/api/save-wallet", async (req, res) => {
+  const { walletAddress, signedMessage, message } = req.body;
+
+  try {
+    // تأیید امضای دیجیتال
+    const isValid = verifySignature({
+      publicKey: walletAddress,
+      data: Buffer.from(message, "utf-8"),
+      signature: Buffer.from(signedMessage, "base64"),
+    });
+
+    if (!isValid) {
+      return res.status(400).json({ error: "Invalid signature!" });
     }
 
-    .container {
-      text-align: center;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      width: 90%;
-      max-width: 400px;
-    }
+    // ذخیره آدرس کیف پول در پایگاه داده
+    const wallet = new Wallet({ walletAddress });
+    await wallet.save();
 
-    .wallet-info {
-      margin-top: 20px;
-      padding: 10px;
-      background: #f0f0f0;
-      border-radius: 5px;
-      font-size: 14px;
-    }
+    res.status(200).json({ message: "Wallet saved successfully!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error!" });
+  }
+});
 
-    button {
-      padding: 10px 20px;
-      background-color: #4e54c8;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      margin-top: 20px;
-      transition: background-color 0.2s ease;
-    }
-
-    button:hover {
-      background-color: #8f94fb;
-    }
-
-    .address-box {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 14px;
-      background: #f9f9f9;
-    }
-
-    .address-box span {
-      font-weight: bold;
-      color: #4e54c8;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>TON Wallet Integration</h1>
-    <p>Connect your TON wallet to start playing and earning.</p>
-    <button id="connectWallet">Connect Wallet</button>
-    <div class="wallet-info" id="walletInfo" style="display: none;">
-      <p>Wallet connected successfully!</p>
-      <div class="address-box">
-        Your Wallet Address: <span id="walletAddress">Loading...</span>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    async function connectWallet() {
-      try {
-        // Check if the TON Wallet extension is available
-        if (!window.ton) {
-          alert("TON Wallet extension not detected. Please install it to proceed.");
-          return;
-        }
-
-        // Request wallet connection
-        const result = await window.ton.send("ton_requestWalletAccess");
-
-        // Handle connection result
-        if (result === true) {
-          const walletAddress = window.ton.publicKey;
-          document.getElementById("walletInfo").style.display = "block";
-          document.getElementById("walletAddress").innerText = walletAddress;
-        } else {
-          alert("Connection failed. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error connecting to TON Wallet:", error);
-        alert("An error occurred. Please try again.");
-      }
-    }
-
-    // Add event listener to the button
-    document.getElementById("connectWallet").addEventListener("click", connectWallet);
-  </script>
-</body>
-</html>
+// راه‌اندازی سرور
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
+});
