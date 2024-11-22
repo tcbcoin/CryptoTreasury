@@ -3,129 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tap Swap Game</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <title>Tap Swap - TON Wallet Integration</title>
   <style>
-    /* همان کد استایل اصلی */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .wallet-info {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #4e54c8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #8f94fb;
+    }
+
+    .address-box {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      background: #f9f9f9;
+    }
+
+    .address-box span {
+      font-weight: bold;
+      color: #4e54c8;
+    }
   </style>
 </head>
 <body>
-  <div class="game-container">
-    <div class="header">🚀 Tap Swap 🚀</div>
-    <div class="score">Points: <span id="points">0</span></div>
-    <div id="wallet-address" style="font-size: 14px; margin-bottom: 10px; color: gray;">
-      Connect your wallet to start!
-    </div>
-    <button onclick="connectWallet()" style="margin-bottom: 20px;">Connect Wallet</button>
-    <div class="coin" onclick="collectPoints(event)">
-      <h1>💰</h1>
-    </div>
-    <div class="shop">
-      <h2>Shop</h2>
-      <div class="shop-item" onclick="buyItem('clickPower')">
-        <p><strong>Increase Click Power</strong></p>
-        <p>Cost: <span id="clickPowerCost">50</span> Points</p>
+  <div class="container">
+    <h1>TON Wallet Integration</h1>
+    <p>Connect your TON wallet to start playing and earning.</p>
+    <button id="connectWallet">Connect Wallet</button>
+    <div class="wallet-info" id="walletInfo" style="display: none;">
+      <p>Wallet connected successfully!</p>
+      <div class="address-box">
+        Your Wallet Address: <span id="walletAddress">Loading...</span>
       </div>
-    </div>
-    <div>
-      <h3>Your Referral Link</h3>
-      <input type="text" id="referral-link" readonly style="width: 100%; padding: 5px; border-radius: 5px;" value="Generate your link after connecting!">
     </div>
   </div>
 
   <script>
-    let points = 0;
-    let clickPower = 1;
-    let clickPowerCost = 50;
-    let userWallet = null;
-    const userData = {}; // Temporary storage, replace with a database for persistence
-
-    // Connect to MetaMask wallet
     async function connectWallet() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const accounts = await provider.send("eth_requestAccounts", []);
-          userWallet = accounts[0];
-          document.getElementById("wallet-address").textContent = `Wallet: ${userWallet}`;
-          generateReferralLink();
-          loadUserData();
-        } catch (error) {
-          alert("Failed to connect wallet: " + error.message);
+      try {
+        // Check if the TON Wallet extension is available
+        if (!window.ton) {
+          alert("TON Wallet extension not detected. Please install it to proceed.");
+          return;
         }
-      } else {
-        alert("MetaMask is not installed. Please install it to use this feature.");
+
+        // Request wallet connection
+        const result = await window.ton.send("ton_requestWalletAccess");
+
+        // Handle connection result
+        if (result === true) {
+          const walletAddress = window.ton.publicKey;
+          document.getElementById("walletInfo").style.display = "block";
+          document.getElementById("walletAddress").innerText = walletAddress;
+        } else {
+          alert("Connection failed. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error connecting to TON Wallet:", error);
+        alert("An error occurred. Please try again.");
       }
     }
 
-    // Generate referral link
-    function generateReferralLink() {
-      if (userWallet) {
-        const referralLink = `${window.location.href}?ref=${userWallet}`;
-        document.getElementById("referral-link").value = referralLink;
-      }
-    }
-
-    // Load user data
-    function loadUserData() {
-      if (userWallet && userData[userWallet]) {
-        points = userData[userWallet].points || 0;
-        clickPower = userData[userWallet].clickPower || 1;
-        clickPowerCost = userData[userWallet].clickPowerCost || 50;
-      }
-      updateUI();
-    }
-
-    // Save user data
-    function saveUserData() {
-      if (userWallet) {
-        userData[userWallet] = {
-          points,
-          clickPower,
-          clickPowerCost,
-        };
-      }
-    }
-
-    // Anti-cheat validation (basic example)
-    function validateCheatDetection() {
-      // Example: Validate points based on server-side tracking or thresholds
-      if (points < 0) {
-        alert("Cheating detected!");
-        points = 0;
-        updateUI();
-      }
-    }
-
-    // Collect points with animation
-    function collectPoints(event) {
-      points += clickPower;
-      validateCheatDetection();
-      saveUserData();
-      updateUI();
-    }
-
-    // Buy items
-    function buyItem(item) {
-      if (item === 'clickPower' && points >= clickPowerCost) {
-        points -= clickPowerCost;
-        clickPower++;
-        clickPowerCost *= 2; // Increase cost for next upgrade
-        saveUserData();
-      } else {
-        alert('Not enough points!');
-      }
-      updateUI();
-    }
-
-    // Update UI
-    function updateUI() {
-      document.getElementById('points').textContent = points;
-      document.getElementById('clickPowerCost').textContent = clickPowerCost;
-    }
-
-    // Initialize UI
-    updateUI();
+    // Add event listener to the button
+    document.getElementById("connectWallet").addEventListener("click", connectWallet);
   </script>
 </body>
 </html>
