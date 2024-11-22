@@ -3,37 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2E Blockchain Game</title>
+    <title>GoldTap P2E Blockchain Game</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
-        }
-        canvas {
-            display: block;
-            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #87CEEB;
         }
         #connectWallet {
-            position: absolute;
-            top: 10px;
-            left: 10px;
             padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-top: 20px;
+        }
+        #walletAddress {
+            font-size: 16px;
+            color: white;
+            margin-top: 10px;
+        }
+        canvas {
+            border: 2px solid #000;
         }
     </style>
 </head>
 <body>
 
+<h1>GoldTap Play-to-Earn (P2E) Blockchain Game</h1>
 <button id="connectWallet">Connect Wallet</button>
+<div id="walletAddress"></div>
 
 <script>
-    // Game configuration
     const config = {
         type: Phaser.AUTO,
         width: 800,
@@ -54,93 +63,64 @@
     };
 
     const game = new Phaser.Game(config);
-
-    let player, cursors, resources, scoreText;
-    let score = 0;
-    let walletConnected = false;
-
-    // Blockchain variables
-    let userWalletAddress = null;
-    let provider, signer;
+    let player, cursors, coins, scoreText, walletConnected = false;
+    let score = 0, userWalletAddress = null, provider, signer;
 
     function preload() {
-        // Load assets
-        this.load.image('grass', 'https://examples.phaser.io/assets/skies/sky4.png');
+        this.load.image('coin', 'https://examples.phaser.io/assets/sprites/coin.png');
         this.load.image('player', 'https://examples.phaser.io/assets/sprites/phaser-dude.png');
-        this.load.image('resource', 'https://examples.phaser.io/assets/sprites/gem.png');
     }
 
     function create() {
-        // Add the background
-        this.add.tileSprite(0, 0, config.width, config.height, 'grass').setOrigin(0, 0);
-
-        // Add the player
+        // Display player
         player = this.physics.add.sprite(400, 300, 'player').setScale(0.5);
         player.setCollideWorldBounds(true);
 
-        // Add resources group
-        resources = this.physics.add.group({
-            key: 'resource',
+        // Add coin group
+        coins = this.physics.add.group({
+            key: 'coin',
             repeat: 10,
-            setXY: { x: 50, y: 50, stepX: 70, stepY: 50 }
+            setXY: { x: 100, y: 100, stepX: 70, stepY: 50 }
         });
 
-        resources.children.iterate(function (child) {
-            child.setScale(0.5);
+        coins.children.iterate(function (child) {
+            child.setScale(0.5).setInteractive();
+            child.on('pointerdown', collectCoin, this);
         });
-
-        // Add collision between player and resources
-        this.physics.add.overlap(player, resources, collectResource, null, this);
-
-        // Add keyboard controls
-        cursors = this.input.keyboard.createCursorKeys();
 
         // Display score
-        scoreText = this.add.text(10, 10, `Score: ${score}`, {
-            font: '16px Arial',
-            fill: '#ffffff'
-        });
+        scoreText = this.add.text(10, 10, `Score: ${score}`, { font: '16px Arial', fill: '#ffffff' });
 
         // Connect wallet button
         const connectButton = document.getElementById('connectWallet');
         connectButton.addEventListener('click', connectWallet);
+
+        // Wallet address display
+        const walletAddressText = document.getElementById('walletAddress');
     }
 
-    function update() {
-        player.setVelocity(0);
+    function update() {}
 
-        if (cursors.left.isDown) {
-            player.setVelocityX(-200);
-        } else if (cursors.right.isDown) {
-            player.setVelocityX(200);
-        }
-
-        if (cursors.up.isDown) {
-            player.setVelocityY(-200);
-        } else if (cursors.down.isDown) {
-            player.setVelocityY(200);
-        }
-    }
-
-    function collectResource(player, resource) {
-        resource.disableBody(true, true);
+    function collectCoin(pointer, coin) {
+        coin.disableBody(true, true);
         score += 10;
         scoreText.setText(`Score: ${score}`);
 
-        if (walletConnected) {
-            // Simulate sending reward to wallet
-            console.log(`Reward sent to wallet: ${userWalletAddress}`);
+        if (score >= 100000000) {
+            score = 0;
+            alert("Congratulations! You have earned 1 GoldTap Token!");
+            // Call smart contract to send token (Not implemented yet)
         }
     }
 
     async function connectWallet() {
         if (typeof window.ethereum !== 'undefined') {
             try {
-                // Request account access
                 const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
                 userWalletAddress = accounts[0];
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
+                document.getElementById('walletAddress').innerText = `Connected Wallet: ${userWalletAddress}`;
                 walletConnected = true;
                 alert(`Wallet connected: ${userWalletAddress}`);
             } catch (error) {
