@@ -104,6 +104,9 @@
     <div class="coin" onclick="collectPoints(event)">
       <h1>💰</h1>
     </div>
+    <div class="wallet-info">
+      <p>Your Wallet: <span id="user-wallet"></span></p>
+    </div>
     <div class="shop">
       <h2>Shop</h2>
       <div class="shop-item" onclick="buyItem('clickPower')">
@@ -114,54 +117,85 @@
   </div>
 
   <script>
-    // Variables
     let points = 0;
     let clickPower = 1;
     let clickPowerCost = 50;
+    let walletAddress = "";
+
+    // Load user data from localStorage
+    function loadUserData() {
+      const savedData = JSON.parse(localStorage.getItem("tapTapGameData"));
+      if (savedData) {
+        points = savedData.points || 0;
+        clickPower = savedData.clickPower || 1;
+        clickPowerCost = savedData.clickPowerCost || 50;
+        walletAddress = savedData.walletAddress || "";
+      }
+    }
+
+    // Save user data to localStorage
+    function saveUserData() {
+      const data = {
+        points,
+        clickPower,
+        clickPowerCost,
+        walletAddress,
+      };
+      localStorage.setItem("tapTapGameData", JSON.stringify(data));
+    }
 
     // Update UI
     function updateUI() {
-      document.getElementById('points').textContent = points;
-      document.getElementById('clickPowerCost').textContent = clickPowerCost;
+      document.getElementById("points").textContent = points;
+      document.getElementById("clickPowerCost").textContent = clickPowerCost;
+      document.getElementById("user-wallet").textContent = walletAddress;
     }
 
     // Collect Points
     function collectPoints(event) {
       points += clickPower;
+      saveUserData();
       updateUI();
     }
 
     // Buy Items
     function buyItem(item) {
-      if (item === 'clickPower' && points >= clickPowerCost) {
+      if (item === "clickPower" && points >= clickPowerCost) {
         points -= clickPowerCost;
         clickPower++;
         clickPowerCost *= 2; // Increase cost for next upgrade
+        saveUserData();
       } else {
-        alert('Not enough points!');
+        alert("Not enough points!");
       }
       updateUI();
     }
 
     // Wallet Connection Logic
     async function connectWallet() {
-      if (typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask) {
+      if (typeof window.ethereum !== "undefined" && window.ethereum.isMetaMask) {
         try {
-          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-          const walletAddress = accounts[0];
-          document.getElementById('wallet').textContent = `Wallet Address: ${walletAddress}`;
-          document.getElementById('connect-wallet').style.display = 'none';
-          document.getElementById('game-container').style.display = 'block';
+          const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+          walletAddress = accounts[0];
+          saveUserData();
+          document.getElementById("connect-wallet").style.display = "none";
+          document.getElementById("game-container").style.display = "block";
+          updateUI();
         } catch (error) {
-          console.error('Connection rejected:', error);
-          alert('You must connect your wallet to play.');
+          console.error("Connection rejected:", error);
+          alert("You must connect your wallet to play.");
         }
       } else {
-        alert('MetaMask is not detected. Please install or enable it in your browser.');
+        alert("MetaMask is not detected. Please install or enable it in your browser.");
       }
     }
 
-    // Initialize UI
+    // Initialize Game
+    loadUserData();
+    if (walletAddress) {
+      document.getElementById("connect-wallet").style.display = "none";
+      document.getElementById("game-container").style.display = "block";
+    }
     updateUI();
   </script>
 </body>
