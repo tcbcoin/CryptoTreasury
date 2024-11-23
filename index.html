@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fidget Spinner</title>
+    <link rel="stylesheet" href="css.css">
+</head>
+<body>
+    <div class="spinner-container">
+        <img src="SOGmZ.gif" class="spinner" id="spinner" alt="Fidget Spinner">
+    </div>
+    <div id="score">0.000000000000000000000</div>
+    
+    <script>
+        let points = 0;
+        let lastRotation = 0;
+        let lastTimestamp = performance.now();
+
+        const spinner = document.getElementById('spinner');
+
+        function updateSpinnerScore(rotation) {
+            const now = performance.now();
+            const deltaTime = (now - lastTimestamp) / 1000; // Time in seconds
+            lastTimestamp = now;
+
+            const speed = Math.abs(rotation - lastRotation) / deltaTime; // Calculate speed
+            lastRotation = rotation;
+
+            const speedFactor = 1e-21; // Scoring factor
+            const newPoints = speed * speedFactor;
+            points += newPoints;
+
+            // Update score display
+            const scoreElement = document.getElementById('score');
+            if (scoreElement) {
+                scoreElement.innerText = points.toFixed(21);
+            } else {
+                console.error("Score element (#score) not found!");
+            }
+        }
+
+        function simulateSpinner() {
+            const rotation = Math.random() * 360; // Simulate rotation
+            updateSpinnerScore(rotation);
+
+            requestAnimationFrame(simulateSpinner);
+        }
+
+        // Start simulation
+        simulateSpinner();
+    </script>
+</body>
+</html>
