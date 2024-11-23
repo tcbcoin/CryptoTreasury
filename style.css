@@ -1,0 +1,22 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+#game {
+    text-align: center;
+}
+
+#tap-button {
+    font-size: 2em;
+    padding: 10px 20px;
+}
+
+#coins {
+    font-size: 1.5em;
+    margin-top: 20px;
+}
