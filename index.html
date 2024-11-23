@@ -1,54 +1,57 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fidget Spinner</title>
+    <!-- لینک CSS -->
     <link rel="stylesheet" href="css.css">
 </head>
 <body>
+    <!-- نمایش چرخاننده -->
     <div class="spinner-container">
         <img src="SOGmZ.gif" class="spinner" id="spinner" alt="Fidget Spinner">
     </div>
+    <!-- نمایش امتیاز -->
     <div id="score">0.000000000000000000000</div>
     
     <script>
+        // متغیرها برای محاسبه امتیاز
         let points = 0;
         let lastRotation = 0;
         let lastTimestamp = performance.now();
 
-        const spinner = document.getElementById('spinner');
-
+        // تابع برای به‌روزرسانی امتیازات
         function updateSpinnerScore(rotation) {
             const now = performance.now();
-            const deltaTime = (now - lastTimestamp) / 1000; // Time in seconds
+            const deltaTime = (now - lastTimestamp) / 1000; // زمان به ثانیه
             lastTimestamp = now;
 
-            const speed = Math.abs(rotation - lastRotation) / deltaTime; // Calculate speed
+            const speed = Math.abs(rotation - lastRotation) / deltaTime; // محاسبه سرعت
             lastRotation = rotation;
 
-            const speedFactor = 1e-21; // Scoring factor
+            const speedFactor = 1e-21; // ضریب برای امتیازدهی
             const newPoints = speed * speedFactor;
             points += newPoints;
 
-            // Update score display
+            // به‌روزرسانی نمایش امتیاز
             const scoreElement = document.getElementById('score');
             if (scoreElement) {
                 scoreElement.innerText = points.toFixed(21);
             } else {
-                console.error("Score element (#score) not found!");
+                console.error("عنصر امتیاز (#score) پیدا نشد!");
             }
         }
 
+        // تابع برای شبیه‌سازی چرخش
         function simulateSpinner() {
-            const rotation = Math.random() * 360; // Simulate rotation
+            const rotation = Math.random() * 360; // شبیه‌سازی چرخش
             updateSpinnerScore(rotation);
 
-            requestAnimationFrame(simulateSpinner);
+            requestAnimationFrame(simulateSpinner); // ادامه شبیه‌سازی
         }
 
-        // Start simulation
+        // شروع شبیه‌سازی
         simulateSpinner();
     </script>
 </body>
