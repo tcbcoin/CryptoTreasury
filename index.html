@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بازی اسپین</title>
+    <title>بازی اسپینر</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,10 +11,14 @@
             background-color: #f5f5f5;
             padding: 50px;
         }
-        iframe {
-            width: 400px;
-            height: 400px;
-            border: none;
+        #spinContainer {
+            margin: auto;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 5px solid #ddd;
         }
         #score {
             font-size: 24px;
@@ -24,30 +28,57 @@
 </head>
 <body>
 
-    <h1>بازی اسپین</h1>
+    <h1>بازی اسپینر</h1>
     <p>برای شروع، اسپینر را بچرخانید و هرچه سریعتر بچرخانید، امتیاز بیشتری کسب می‌کنید!</p>
-    
-    <!-- جاسازی اسپینر سایت -->
-    <iframe src="https://fidget.kittyspin.xyz" id="spinIframe"></iframe>
+
+    <!-- محل نمایش اسپینر -->
+    <div id="spinContainer"></div>
     
     <p id="score">امتیاز: 0.0000000000000001</p>
-    
+
+    <!-- لود کردن اسپینر -->
+    <script src="https://cdn.rawgit.com/fgnass/spin.js/master/spin.js"></script>
+
     <script>
         let score = 0.0000000000000001;
         let startTime = 0;
         let isSpinning = false;
 
-        // تابع برای شروع یا پایان اسپین
+        // تنظیمات اسپینر
+        let opts = {
+            lines: 12, // تعداد خط‌ها
+            length: 0, // طول خط‌ها
+            width: 20, // عرض خط‌ها
+            radius: 40, // شعاع دایره
+            scale: 1, // مقیاس اسپینر
+            corners: 1, // انحنای گوشه‌ها
+            color: '#000', // رنگ خط‌ها
+            fadeColor: 'transparent', // رنگ محو شدن
+            speed: 1, // سرعت چرخش
+            rotate: 0, // چرخش اولیه
+            animation: 'spin', // نوع انیمیشن
+            direction: 1, // جهت چرخش
+            zIndex: 2e9, // میزان اولویت
+            top: '50%', // موقعیت عمودی
+            left: '50%' // موقعیت افقی
+        };
+
+        // ساخت اسپینر
+        let spinner = new Spinner(opts).spin(document.getElementById('spinContainer'));
+
+        // شروع یا پایان اسپین
         function startSpin() {
             if (!isSpinning) {
                 startTime = new Date().getTime();  // ذخیره زمان شروع اسپین
                 isSpinning = true;
+                spinner.spin(document.getElementById('spinContainer'));  // شروع چرخش
             } else {
                 let endTime = new Date().getTime();  // زمان پایان اسپین
                 let spinDuration = endTime - startTime;  // مدت زمان اسپین
                 let addedScore = Math.max(0.0000000000000001, 1 / spinDuration); // امتیاز بر اساس مدت زمان
                 score += addedScore;
                 updateScore();
+                spinner.stop();  // توقف چرخش
                 isSpinning = false;
             }
         }
@@ -57,8 +88,8 @@
             document.getElementById('score').textContent = "امتیاز: " + score.toFixed(16);
         }
 
-        // اضافه کردن Event Listener برای شبیه‌سازی اسپین
-        document.getElementById('spinIframe').addEventListener('click', startSpin);
+        // اضافه کردن Event Listener برای شروع/پایان اسپین
+        document.getElementById('spinContainer').addEventListener('click', startSpin);
 
     </script>
 
