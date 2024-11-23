@@ -1,10 +1,9 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-    let coins = 0;
-    const tapButton = document.getElementById('tap-button');
-    const coinsDisplay = document.getElementById('coins');
+let taps = 0;
+let coins = 0;
 
-    tapButton.addEventListener('click', () => {
-        coins++;
-        coinsDisplay.textContent = `Coins: ${coins}`;
-    });
-});
+function tap() {
+    taps++;
+    coins++;
+    document.getElementById('taps').innerText = taps;
+    document.getElementById('coins').innerText = coins;
+}
